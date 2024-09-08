@@ -2,7 +2,7 @@
 
 实验性AI Agent项目
 
-## 架构
+## 项目描述
 
 - 基于GPT4
 - 采用前后端分离, 本repo只提供API及内部Agent逻辑, 前端逻辑见[小草神项目](https://github.com/liu599/NahidaSystem)
@@ -11,4 +11,7 @@
 - Automatically subscribes to specific GitHub repositories and tracks the latest updates.
 - Generates detailed reports on repository activity.
 - Automatically sends notifications to keep users informed of new developments in real time.
+- 插件学习自以下项目
+  - https://github.com/DjangoPeng/GitHubSentinel
+  - https://github.com/DjangoPeng/GitHubSentinel/tree/v0.0.1
 
