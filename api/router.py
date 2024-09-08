@@ -4,11 +4,13 @@
 # @Description :
 from flask_restx import Api
 
-from api.view.trial_sentinel import chat_api_namespace
+from api.view.trial_sentinel import agent_api_namespace
+from api.view.chat import chat_api_namespace
 from logger import s_log
 
 route_map = {
-    'agent_chat': chat_api_namespace
+    'agent_chat': agent_api_namespace,
+    'chat_api': chat_api_namespace,
 }
 
 

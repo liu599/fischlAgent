@@ -9,12 +9,12 @@ from flask_restx import Namespace, fields
 
 from framework.inori_plugin_manager.plugin_manager import PluginManager
 
-chat_api_namespace = Namespace("队列测试", description='队列测试, 接口定义')
+agent_api_namespace = Namespace("Agent测试", description='测试, 接口定义')
 
-@chat_api_namespace.route("")
-class LLMChatView(BaseView):
+@agent_api_namespace.route("")
+class LLMAgentView(BaseView):
 
-    @chat_api_namespace.doc()
+    @agent_api_namespace.doc()
     def get(self):
         """
         调用Agent
@@ -28,11 +28,11 @@ class LLMChatView(BaseView):
             data=None
         )
 
-    chat_payload = api.model('测试任务请求2', {
+    agent_payload = api.model('AgentPayload', {
         'repo': fields.String(description='repo name', example='repo:langchain-ai/langchain', required=True),
     })
 
-    @chat_api_namespace.doc(body=chat_payload)
+    @agent_api_namespace.doc(body=agent_payload)
     def post(self):
         """
         调用Github Agent并存储

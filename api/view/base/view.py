@@ -16,12 +16,13 @@ from api.conf import api_conf
 
 
 class BaseView(Resource):
+    api_config = None
     request = None
-    redis_queue_producer = None
 
     def __init__(self, *args, **kwargs):
         self.__setattr__('request', request)
-        self.__setattr__('api_config', api_conf.config)
+        self.__setattr__('api_config', api_conf)
+        print(api_conf.get("llm_azure", "api_version"))
         super(BaseView, self).__init__(*args, **kwargs)
 
     def response_raw(self, code, msg, data):
