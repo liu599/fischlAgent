@@ -15,3 +15,16 @@
   - https://github.com/DjangoPeng/GitHubSentinel
   - https://github.com/DjangoPeng/GitHubSentinel/tree/v0.0.1
 
+## API文档
+
+- `python main.py`
+- 启动后访问localhost:5010即可
+
+## 大模型API实验
+
+`
+  
+`
+
+
+

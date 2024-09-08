@@ -20,7 +20,6 @@ class Gpt4Model(BaseLanguageModel):
             top_p=0.7,
             frequency_penalty=0,
             presence_penalty=0.7,
-            user="senseauto-hiphop",
             response_format={
                 "type": "text",
             }
