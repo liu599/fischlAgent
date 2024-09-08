@@ -5,12 +5,14 @@
 import sys
 
 from flask import request, jsonify, make_response
+
 # Resource 继承了 MethodView
 # from flask.views import MethodView
 from logger import s_log
 from logger import register_logger
 from api.constants.status_code import Codes
 from flask_restx import Resource
+from api.conf import api_conf
 
 
 class BaseView(Resource):
@@ -19,6 +21,7 @@ class BaseView(Resource):
 
     def __init__(self, *args, **kwargs):
         self.__setattr__('request', request)
+        self.__setattr__('api_config', api_conf.config)
         super(BaseView, self).__init__(*args, **kwargs)
 
     def response_raw(self, code, msg, data):
