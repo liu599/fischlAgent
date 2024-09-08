@@ -2,12 +2,13 @@
 # @Time        : 2024/9/8
 # @Author      : liuboyuan
 # @Description :
-import requests
 import markdown
 import imgkit
-from datetime import datetime
 from typing import Dict, Optional
 
+import os
+
+from api.plugins.agent.github_client import GitHubClient
 from framework.inori_plugin_manager.base_plugin import BasePlugin
 
 
@@ -17,9 +18,10 @@ class GithubDataFetcher(BasePlugin):
     def __init__(self) -> None:
         self.api_url = "https://api.github.com"
         self.headers = {"Accept": "application/vnd.github.v3+json"}
-        self.query_params: Optional[Dict[str, str]] = None
+        self.query_params: Optional[str] = None
         self.token: Optional[str] = None
         self.output_dir = None
+        self.github_client = None
 
     def configure(self, token: str, output_dir=None) -> None:
         """
@@ -28,10 +30,11 @@ class GithubDataFetcher(BasePlugin):
         """
         self.token = token
         self.headers["Authorization"] = f"token {self.token}"
+        self.github_client = GitHubClient(api_url=self.api_url, headers=self.headers)
         if output_dir:
             self.output_dir = output_dir
 
-    def set_query_params(self, params: Dict[str, str]) -> None:
+    def set_query_params(self, params: str) -> None:
         """
         设置查询参数
         :param params: 字典类型的查询参数
@@ -41,61 +44,49 @@ class GithubDataFetcher(BasePlugin):
     def run(self, *args, **kwargs) -> Optional[str]:
         """
         实现GitHub API的数据抓取逻辑，并生成报告文件
-        :param output_dir: 保存报告的目录路径，如果未指定，则保存在当前目录
         :param args: 可变参数
         :param kwargs: 关键字参数
         :return: 返回生成的报告文件路径
         """
-        import requests
-
-        # 确保查询参数已设置
         if not self.query_params:
             raise ValueError("查询参数未设置，请使用 set_query_params() 方法设置参数")
 
-        # 构建完整的API请求URL
-        url = f"{self.api_url}/search/repositories"
+        report_file_path = self.generate_report(self.query_params, self.output_dir)
+        return report_file_path
+        # 将报告转换为图片
+        # self.convert_markdown_to_image(report, "report.png")
+        # print("报告图片已生成并保存为report.png")
 
-        try:
-            # 发送GET请求到GitHub API，获取热门项目数据
-            response = requests.get(url, headers=self.headers, params=self.query_params)
-
-            # 检查请求是否成功
-            if response.status_code == 200:
-                # 获取第一个仓库的数据
-                repo_data = response.json().get("items", [])[0]
-
-                # 生成报告并保存为文件
-                report_file_path = self.generate_report(repo_data, self.output_dir)
-
-                # 返回报告文件的路径
-                return report_file_path
-            else:
-                # 如果请求失败，抛出异常
-                response.raise_for_status()
-
-        except requests.exceptions.RequestException as e:
-            # 处理请求异常
-            print(f"请求GitHub API时出错: {e}")
-            return None
-
-            # 将报告转换为图片
-            # self.convert_markdown_to_image(report, "report.png")
-            # print("报告图片已生成并保存为report.png")
-
-    def generate_report(self, repo_data: Dict, output_dir: Optional[str] = None) -> str:
+    def generate_report(self, query: str, output_dir: Optional[str] = None) -> str:
         """
         根据GitHub项目数据生成markdown格式的报告，并保存为文件
         :param repo_data: GitHub仓库的数据
         :param output_dir: 保存报告的目录路径，如果未指定，则保存在当前目录
         :return: 返回markdown格式的报告
         """
-        repo_name = repo_data.get("name", "N/A")
+        from datetime import datetime
+        print(query)
+        repos = self.github_client.search_repositories(query)
+        repo_data = None
+        if "items" in repos and len(repos["items"]) > 0:
+            repo_data = repos["items"][0]
+        if repo_data is None:
+            raise Exception("Github API Failure")
+        repo_name = repo_data.get("name", "UnknownRepo")
         owner = repo_data.get("owner", {}).get("login", "N/A")
         stars = repo_data.get("stargazers_count", "N/A")
         forks = repo_data.get("forks_count", "N/A")
         description = repo_data.get("description", "N/A")
         url = repo_data.get("html_url", "N/A")
         updated_at = repo_data.get("updated_at", "N/A")
+        print(repo_name)
+        print(owner)
+        # 获取 issues 列表
+        issues = self.github_client.get_issues(repo_name, owner)
+        # 获取 commits 列表
+        commits = self.github_client.get_commits(repo_name, owner)
+        # 获取 pull requests 列表
+        pull_requests = self.github_client.get_pull_requests(repo_name, owner)
 
         report = f"""
     # GitHub Repository Report: {repo_name}
@@ -107,23 +98,33 @@ class GithubDataFetcher(BasePlugin):
     **URL:** [Link to repository]({url})  
     **Last Updated:** {updated_at}
 
+    ## Issues
+    {issues}
+
+    ## Commits
+    {commits}
+
+    ## Pull Requests
+    {pull_requests}
+
     Report generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
     """
+
         # 生成Markdown文件
         timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
         filename = f"{repo_name}-{timestamp}.md"
-
+        print(report)
         # 如果指定了路径，则将文件保存在该路径下
-        if output_dir:
+        if output_dir is not None:
             output_path = f"{output_dir}/{filename}"
         else:
             output_path = filename
-
+        print(output_path)
         with open(output_path, 'w', encoding='utf-8') as file:
             file.write(report)
         print(f"Markdown报告已保存为 {output_path}")
 
-        return output_path
+        return report
 
     def convert_markdown_to_image(self, markdown_text: str, output_file: str) -> None:
         """
@@ -143,7 +144,7 @@ if __name__ == "__main__":
     fetcher.configure(token, output_dir=None)  # 替换为你的GitHub Token
 
     # 设置查询参数
-    fetcher.set_query_params({"q": "repo:langchain-ai/langchain"})
+    fetcher.set_query_params("repo:langchain-ai/langchain")
 
     fetcher.run()
 

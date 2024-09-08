@@ -48,9 +48,7 @@ class LLMChatView(BaseView):
         print(pm.get_plugin_list())
         plugin = pm.get_plugin("api.plugins.agent.githubdatafetcher")
         plugin.configure(token=token, output_dir=local_folder)
-        plugin.set_query_params(
-            {"q": repo}
-        )
+        plugin.set_query_params(repo)
         plugin.run()
         return self.response_raw(
             code=Codes.SUCCESS.code,
