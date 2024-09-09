@@ -4,7 +4,7 @@
 # @Description :
 import os
 from datetime import datetime
-
+import markdown2
 from api.view.base.view import BaseView
 from api.constants.status_code import Codes
 from api_entry import rest_api_description as api
@@ -68,6 +68,9 @@ class LLMAgentView(BaseView):
             print(system_prompt)
             print(file_content)
             print(updates['info']['repo'])
+            html_report = markdown2.markdown(file_content)
+            with open(f"static/{os.path.basename(file_path)}.html", 'w', encoding='utf-8') as file:
+                file.write(html_report)
             return self.response_raw(
                 code=Codes.SUCCESS.code,
                 msg=Codes.SUCCESS.desc,
@@ -79,15 +82,18 @@ class LLMAgentView(BaseView):
             })
             timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
             filename = f"{updates['info']['repo']}-{days}-{updates['info']['from']}-{timestamp}.md"
+            content = chat_message_body["content"]
             with open(f"static/{filename}", 'w', encoding='utf-8') as file:
-                file.write(chat_message_body["content"])
+                file.write(content)
+            with open(f"static/{filename}.html", 'w', encoding='utf-8') as file:
+                file.write(markdown2.markdown(content))
 
             return self.response_raw(
                 code=Codes.SUCCESS.code,
                 msg=Codes.SUCCESS.desc,
                 data={
                     "report_file_path": f"{self.base_url}/static/{os.path.basename(file_path)}",
-                    "gpt_report_file_path": f"{self.base_url}/static/{filename}",
+                    "gpt_report_file_path": f"{self.base_url}/static/{filename}.html",
                     "metadata": chat_message_body["metadata"]
                 }
             )
