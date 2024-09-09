@@ -20,6 +20,33 @@
 - `python main.py`
 - 启动后访问localhost:5010即可
 
+## 生成报告API
+
+```
+curl -X 'POST' \
+  'http://localhost:5010/fischl_api/v1/agent_chat' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "repo": "repo:langchain-ai/langchain",
+  "days": 3
+}'
+
+```
+
+返回
+
+```
+{
+  "code": 20000,
+  "data": {
+    "repo": "repo:langchain-ai/langchain"
+  },
+  "message": "操作成功"
+}
+
+```
+
 ## 大模型API实验
 
 ```

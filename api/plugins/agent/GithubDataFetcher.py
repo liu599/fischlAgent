@@ -4,9 +4,7 @@
 # @Description :
 import markdown
 import imgkit
-from typing import Dict, Optional
-
-import os
+from typing import Optional
 
 from api.plugins.agent.github_client import GitHubClient
 from framework.inori_plugin_manager.base_plugin import BasePlugin
@@ -21,16 +19,18 @@ class GithubDataFetcher(BasePlugin):
         self.query_params: Optional[str] = None
         self.token: Optional[str] = None
         self.output_dir = None
-        self.github_client = None
+        self.github_client: GitHubClient = None
+        self.days = 0
 
-    def configure(self, token: str, output_dir=None) -> None:
+    def configure(self, token: str, output_dir=None, days=0) -> None:
         """
         配置函数，用于设置GitHub用户token和其他必要的配置
         :param token: GitHub个人访问令牌
         """
         self.token = token
+        self.days = days
         self.headers["Authorization"] = f"token {self.token}"
-        self.github_client = GitHubClient(api_url=self.api_url, headers=self.headers)
+        self.github_client: GitHubClient = GitHubClient(api_url=self.api_url, headers=self.headers)
         if output_dir:
             self.output_dir = output_dir
 
@@ -51,79 +51,24 @@ class GithubDataFetcher(BasePlugin):
         if not self.query_params:
             raise ValueError("查询参数未设置，请使用 set_query_params() 方法设置参数")
 
-        report_file_path = self.generate_report(self.query_params, self.output_dir)
+        report_file_path = self.generate_report(self.query_params, self.output_dir, self.days)
         return report_file_path
         # 将报告转换为图片
         # self.convert_markdown_to_image(report, "report.png")
         # print("报告图片已生成并保存为report.png")
 
-    def generate_report(self, query: str, output_dir: Optional[str] = None) -> str:
+    def generate_report(self, query: str, output_dir: Optional[str] = None, days: Optional[int] = 0) -> str:
         """
         根据GitHub项目数据生成markdown格式的报告，并保存为文件
         :param repo_data: GitHub仓库的数据
         :param output_dir: 保存报告的目录路径，如果未指定，则保存在当前目录
         :return: 返回markdown格式的报告
         """
-        from datetime import datetime
-        print(query)
-        repos = self.github_client.search_repositories(query)
-        repo_data = None
-        if "items" in repos and len(repos["items"]) > 0:
-            repo_data = repos["items"][0]
-        if repo_data is None:
-            raise Exception("Github API Failure")
-        repo_name = repo_data.get("name", "UnknownRepo")
-        owner = repo_data.get("owner", {}).get("login", "N/A")
-        stars = repo_data.get("stargazers_count", "N/A")
-        forks = repo_data.get("forks_count", "N/A")
-        description = repo_data.get("description", "N/A")
-        url = repo_data.get("html_url", "N/A")
-        updated_at = repo_data.get("updated_at", "N/A")
-        print(repo_name)
-        print(owner)
-        # 获取 issues 列表
-        issues = self.github_client.get_issues(repo_name, owner)
-        # 获取 commits 列表
-        commits = self.github_client.get_commits(repo_name, owner)
-        # 获取 pull requests 列表
-        pull_requests = self.github_client.get_pull_requests(repo_name, owner)
-
-        report = f"""
-    # GitHub Repository Report: {repo_name}
-
-    **Owner:** {owner}  
-    **Stars:** {stars}  
-    **Forks:** {forks}  
-    **Description:** {description}  
-    **URL:** [Link to repository]({url})  
-    **Last Updated:** {updated_at}
-
-    ## Issues
-    {issues}
-
-    ## Commits
-    {commits}
-
-    ## Pull Requests
-    {pull_requests}
-
-    Report generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    """
-
-        # 生成Markdown文件
-        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-        filename = f"{repo_name}-{timestamp}.md"
-        print(report)
-        # 如果指定了路径，则将文件保存在该路径下
-        if output_dir is not None:
-            output_path = f"{output_dir}/{filename}"
+        print(days)
+        if days != 0:
+            report = self.github_client.export_progress_by_date_range(query, days, output_dir=output_dir)
         else:
-            output_path = filename
-        print(output_path)
-        with open(output_path, 'w', encoding='utf-8') as file:
-            file.write(report)
-        print(f"Markdown报告已保存为 {output_path}")
-
+            report = self.github_client.export_daily_progress(query, output_dir=output_dir)
         return report
 
     def convert_markdown_to_image(self, markdown_text: str, output_file: str) -> None:
