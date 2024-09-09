@@ -12,7 +12,7 @@ from logger import s_log
 from logger import register_logger
 from api.constants.status_code import Codes
 from flask_restx import Resource
-from api.conf import api_conf
+from api.conf import api_conf, azure_model_config, gpt_model_config
 
 
 class BaseView(Resource):
@@ -27,17 +27,8 @@ class BaseView(Resource):
         self.__setattr__('request', request)
         self.__setattr__('api_config', api_conf)
         self.__setattr__('base_url', api_conf.get("server", "url"))
-        self.__setattr__('azure_model_config', {
-                "model_name": api_conf.get("llm_azure", "model_name"),
-                "api_version": api_conf.get("llm_azure", "api_version"),
-                "api_endpoint": api_conf.get("llm_azure", "api_endpoint"),
-                "api_key": api_conf.get("llm_azure", "api_key"),
-            })
-        self.__setattr__('gpt_model_config', {
-            "model_name": api_conf.get("llm_gpt4", "model_name"),
-            "api_key": api_conf.get("llm_gpt4", "openai_api_key"),
-            "user_name": api_conf.get("llm_gpt4", "user_name"),
-        })
+        self.__setattr__('azure_model_config', azure_model_config)
+        self.__setattr__('gpt_model_config', gpt_model_config)
         self.__setattr__('prompts', api_conf.get("prompts", "github_prompts"))
         super(BaseView, self).__init__(*args, **kwargs)
 

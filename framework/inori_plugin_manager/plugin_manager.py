@@ -13,7 +13,7 @@ from types import ModuleType
 from typing import Optional, Dict, List, Tuple
 
 from .base_plugin import BasePlugin
-from inori_log import Logger
+from framework.inori_log import Logger
 
 
 def reload_module(module_name):
