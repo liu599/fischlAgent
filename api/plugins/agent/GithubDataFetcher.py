@@ -41,7 +41,7 @@ class GithubDataFetcher(BasePlugin):
         """
         self.query_params = params
 
-    def run(self, *args, **kwargs) -> Optional[str]:
+    def run(self, *args, **kwargs) -> (Optional[str], Optional[dict]):
         """
         实现GitHub API的数据抓取逻辑，并生成报告文件
         :param args: 可变参数
@@ -51,13 +51,13 @@ class GithubDataFetcher(BasePlugin):
         if not self.query_params:
             raise ValueError("查询参数未设置，请使用 set_query_params() 方法设置参数")
 
-        report_file_path = self.generate_report(self.query_params, self.output_dir, self.days)
-        return report_file_path
+        report_file_path, updates = self.generate_report(self.query_params, self.output_dir, self.days)
+        return report_file_path, updates
         # 将报告转换为图片
         # self.convert_markdown_to_image(report, "report.png")
         # print("报告图片已生成并保存为report.png")
 
-    def generate_report(self, query: str, output_dir: Optional[str] = None, days: Optional[int] = 0) -> str:
+    def generate_report(self, query: str, output_dir: Optional[str] = None, days: Optional[int] = 0) -> (str, dict):
         """
         根据GitHub项目数据生成markdown格式的报告，并保存为文件
         :param repo_data: GitHub仓库的数据
@@ -66,10 +66,10 @@ class GithubDataFetcher(BasePlugin):
         """
         print(days)
         if days != 0:
-            report = self.github_client.export_progress_by_date_range(query, days, output_dir=output_dir)
+            report, updates = self.github_client.export_progress_by_date_range(query, days, output_dir=output_dir)
         else:
-            report = self.github_client.export_daily_progress(query, output_dir=output_dir)
-        return report
+            report, updates = self.github_client.export_daily_progress(query, output_dir=output_dir)
+        return report, updates
 
     def convert_markdown_to_image(self, markdown_text: str, output_file: str) -> None:
         """

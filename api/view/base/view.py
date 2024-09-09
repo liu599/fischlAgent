@@ -16,13 +16,23 @@ from api.conf import api_conf
 
 
 class BaseView(Resource):
+    azure_model_config = None
+    base_url = 'http://localhost:5000'
     api_config = None
     request = None
+    prompts = ''
 
     def __init__(self, *args, **kwargs):
         self.__setattr__('request', request)
         self.__setattr__('api_config', api_conf)
-        print(api_conf.get("llm_azure", "api_version"))
+        self.__setattr__('base_url', api_conf.get("server", "url"))
+        self.__setattr__('azure_model_config', {
+                "model_name": api_conf.get("llm_azure", "model_name"),
+                "api_version": api_conf.get("llm_azure", "api_version"),
+                "api_endpoint": api_conf.get("llm_azure", "api_endpoint"),
+                "api_key": api_conf.get("llm_azure", "api_key"),
+            })
+        self.__setattr__('prompts', api_conf.get("prompts", "github_prompts"))
         super(BaseView, self).__init__(*args, **kwargs)
 
     def response_raw(self, code, msg, data):

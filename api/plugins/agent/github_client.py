@@ -152,7 +152,7 @@ Report generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\
         print(f"Markdown报告已保存为 {output_path}")
         return output_path
 
-    def export_daily_progress(self, query, output_dir=None) -> str:
+    def export_daily_progress(self, query, output_dir=None) -> (str, dict):
         today = datetime.now().date().isoformat()  # 获取今天的日期
         # today = date.today()
         # since = today - timedelta(days=1)
@@ -160,16 +160,16 @@ Report generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\
         updates = self.fetch_updates(query, since=today)  # 获取今天的更新数据
         repo_name = updates["info"]["repo"]
         report = self.format_report(updates)
-        return self.export_report(repo_name, report, output_dir)
+        return self.export_report(repo_name, report, output_dir), updates
 
-    def export_progress_by_date_range(self, query, days, output_dir=None) -> str:
+    def export_progress_by_date_range(self, query, days, output_dir=None) -> (str, dict):
         today = date.today()  # 获取当前日期
         since = today - timedelta(days=days)  # 计算开始日期
         updates = self.fetch_updates(query, since=since.isoformat(), until=today.isoformat())  # 获取指定日期范围内的更新
         repo_name = updates["info"]["repo"]
         updates["info"]["days"] = days
         report = self.format_report(updates)
-        return self.export_report(repo_name, report, output_dir)
+        return self.export_report(repo_name, report, output_dir), updates
 
 
 if __name__ == "__main__":

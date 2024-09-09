@@ -3,12 +3,14 @@
 # @Author      : liuboyuan
 # @Description :
 import os
+from datetime import datetime
 
 from api.view.base.view import BaseView
 from api.constants.status_code import Codes
 from api_entry import rest_api_description as api
 from flask_restx import Namespace, fields
 
+from framework.inori_llm_core.chat.chat import llm_chat
 from framework.inori_plugin_manager.plugin_manager import PluginManager
 
 agent_api_namespace = Namespace("Agent测试", description='测试, 接口定义')
@@ -33,6 +35,7 @@ class LLMAgentView(BaseView):
     agent_payload = api.model('AgentPayload', {
         'repo': fields.String(description='repo name', example='repo:langchain-ai/langchain', required=True),
         'days': fields.Integer(description='days', example=5),
+        'dryRun': fields.Integer(description='dry run Feature Flag, only print prompt to LLM', example=1),
     })
 
     @agent_api_namespace.doc(body=agent_payload)
@@ -53,11 +56,38 @@ class LLMAgentView(BaseView):
         plugin = pm.get_plugin("api.plugins.agent.githubdatafetcher")
         plugin.configure(token=token, output_dir=local_folder, days=int(days))
         plugin.set_query_params(repo)
-        file_path = plugin.run()
-        return self.response_raw(
-            code=Codes.SUCCESS.code,
-            msg=Codes.SUCCESS.desc,
-            data={
-                "file_path": f"http://localhost:5010/static/{os.path.basename(file_path)}",
-            }
-        )
+        file_path, updates = plugin.run()
+        system_prompt = ""
+        system_prompt_file_path = self.prompts
+        with open(system_prompt_file_path, 'r', encoding='utf-8') as file:
+            system_prompt = file.read()
+        with open(file_path, 'r', encoding='utf-8') as file:
+            file_content = file.read()
+
+        if 'dryRun' in params:
+            print(system_prompt)
+            print(file_content)
+            print(updates['info']['repo'])
+            return self.response_raw(
+                code=Codes.SUCCESS.code,
+                msg=Codes.SUCCESS.desc,
+                data=None
+            )
+        else:
+            chat_message_body = llm_chat("azure", self.azure_model_config, "{input}", system_prompt, {
+                "input": file_content
+            })
+            timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+            filename = f"{updates['info']['repo']}-{days}-{updates['info']['from']}-{timestamp}.md"
+            with open(f"static/{filename}", 'w', encoding='utf-8') as file:
+                file.write(chat_message_body["content"])
+
+            return self.response_raw(
+                code=Codes.SUCCESS.code,
+                msg=Codes.SUCCESS.desc,
+                data={
+                    "report_file_path": f"{self.base_url}/static/{os.path.basename(file_path)}",
+                    "gpt_report_file_path": f"{self.base_url}/static/{filename}",
+                    "metadata": chat_message_body["metadata"]
+                }
+            )

@@ -26,13 +26,7 @@ class ChatView(BaseView):
         params = self.request.json
         q = params["q"]
         if "model" in params and params["model"] == "azure":
-            model_config = {
-                "model_name": self.api_config.get("llm_azure", "model_name"),
-                "api_version": self.api_config.get("llm_azure", "api_version"),
-                "api_endpoint": self.api_config.get("llm_azure", "api_endpoint"),
-                "api_key": self.api_config.get("llm_azure", "api_key"),
-            }
-            chat_message_body = llm_chat("azure", model_config, "{input}", "", {
+            chat_message_body = llm_chat("azure", self.azure_model_config, "{input}", "", {
                 "input": q
             })
             return self.response_raw(

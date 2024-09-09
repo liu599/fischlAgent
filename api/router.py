@@ -3,7 +3,7 @@
 # @Author      : liuboyuan
 # @Description :
 from flask_restx import Api
-
+from api.view.file import file_api_namespace
 from api.view.trial_sentinel import agent_api_namespace
 from api.view.chat import chat_api_namespace
 from logger import s_log
@@ -11,6 +11,7 @@ from logger import s_log
 route_map = {
     'agent_chat': agent_api_namespace,
     'chat_api': chat_api_namespace,
+    'file': file_api_namespace,
 }
 
 
