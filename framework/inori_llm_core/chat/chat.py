@@ -23,8 +23,15 @@ def llm_chat(model_name: str, model_config: Dict, human_template: str, system_pr
         "system_prompt": system_prompt,  # 系统提示词
     }
     content, metadata, run_id = language_model.langchain_request(**cf)
+
+    if 'token_usage' in metadata:
+        token_usage = metadata['token_usage']['total_tokens']
+    else:
+        token_usage = -1
+
     return {
         "content": content,
         "metadata": metadata,
         "run_id": run_id,
+        "total_tokens": token_usage
     }

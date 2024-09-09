@@ -34,6 +34,15 @@ class ChatView(BaseView):
                 msg=Codes.SUCCESS.desc,
                 data=chat_message_body
             )
+        elif "model" in params and params["model"] == "gpt4":
+            chat_message_body = llm_chat("gpt4", self.gpt_model_config, "{input}", "", {
+                "input": q
+            })
+            return self.response_raw(
+                code=Codes.SUCCESS.code,
+                msg=Codes.SUCCESS.desc,
+                data=chat_message_body
+            )
         else:
             return self.response_raw(
                 code=Codes.PARAMS_CHECK_FAILED.code,

@@ -17,6 +17,7 @@ from api.conf import api_conf
 
 class BaseView(Resource):
     azure_model_config = None
+    gpt_model_config = None
     base_url = 'http://localhost:5000'
     api_config = None
     request = None
@@ -32,6 +33,11 @@ class BaseView(Resource):
                 "api_endpoint": api_conf.get("llm_azure", "api_endpoint"),
                 "api_key": api_conf.get("llm_azure", "api_key"),
             })
+        self.__setattr__('gpt_model_config', {
+            "model_name": api_conf.get("llm_gpt4", "model_name"),
+            "api_key": api_conf.get("llm_gpt4", "openai_api_key"),
+            "user_name": api_conf.get("llm_gpt4", "user_name"),
+        })
         self.__setattr__('prompts', api_conf.get("prompts", "github_prompts"))
         super(BaseView, self).__init__(*args, **kwargs)
 

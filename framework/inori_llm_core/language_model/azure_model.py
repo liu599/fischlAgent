@@ -22,6 +22,7 @@ class AzureModel(BaseLanguageModel):
 
     def langchain_request(self, message: dict, human_prompt="{input}", system_prompt="") -> (str, dict, str):
         prompt = ProjectChatTemplate(human_prompt, system_prompt, with_history=False).chat_prompt_template
+        self.logger.debug(prompt)
         chain = prompt | self.client
         try:
             self.logger.debug(message)
